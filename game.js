@@ -92,6 +92,10 @@ const bird = {
     canvasY: 50,
     gravity: 0.05,
     velocity: 0, 
+    jumpSize: 2.6,
+    jump(){
+        bird.velocity = -bird.jumpSize
+    },
     update() {
         bird.velocity += bird.gravity;
         bird.canvasY += bird.velocity;
@@ -134,6 +138,9 @@ const screens = {
             background.draw()
             floor.draw()
             bird.draw()            
+        },
+        click(){
+            bird.jump();
         },
         update(){
             bird.update()
