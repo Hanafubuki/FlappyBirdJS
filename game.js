@@ -70,7 +70,12 @@ const bird = {
     heightBird: 24,
     canvasX: 10,
     canvasY: 50,
-   
+    gravity: 0.05,
+    velocity: 0, 
+    update() {
+        bird.velocity += bird.gravity;
+        bird.canvasY += bird.velocity;
+    },
     draw(){
         context.drawImage(
             sprites, //imagem
@@ -88,6 +93,7 @@ function loop(){
     background.draw()
     floor.draw()
     bird.draw()
+    bird.update();
     requestAnimationFrame(loop); //vai colocar os quadros da imagem (fps) pra rodarem infinitamente. Nesse caso, a cada quadra, cada segundo, essa mesma funcao vai ser chamada pra ficar printando na tela infinitamente
 }
 
