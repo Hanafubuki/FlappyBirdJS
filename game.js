@@ -81,47 +81,62 @@ const background = {
         floor.width, floor.height,
       );
     },
-  };
+};
 
-const bird = {
-    spriteX: 0,
-    spriteY: 0,
-    widthBird: 33,
-    heightBird: 24,
-    canvasX: 10,
-    canvasY: 50,
-    gravity: 0.05,
-    velocity: 0, 
-    jumpSize: 2.6,
-    jump(){
-        bird.velocity = -bird.jumpSize
-    },
-    update() {
-        bird.velocity += bird.gravity;
-        bird.canvasY += bird.velocity;
-    },
-    draw(){
-        context.drawImage(
-            sprites, //imagem
-            bird.spriteX, bird.spriteY, //a partir de qual pedaco da imagem devemos pegar a imagem (tipo a margem), em px
-            bird.widthBird, bird.heightBird, //tamanho do recorte na sprite: width e height
-            bird.canvasX, bird.canvasY, //qual parte do canvas eu quero que inicie a imagem
-            bird.widthBird, bird.heightBird//dentro do canvas, qual q eh o tamanho que eu quero q a imagem tenha
-        );
+function createBird(){
+    const bird = {
+        spriteX: 0,
+        spriteY: 0,
+        widthBird: 33,
+        heightBird: 24,
+        canvasX: 10,
+        canvasY: 50,
+        gravity: 0.05,
+        velocity: 0, 
+        jumpSize: 2.6,
+        jump(){
+            bird.velocity = -bird.jumpSize
+        },
+        update() {
+            if(collision(bird, floor)){
+                changeToNewScreen(screens.END);
+                //bird.reset(); //ao inves disso, cria uma funcao q faz wrap de toda essa classe e chama ela 
+                return;
+            }
+            bird.velocity += bird.gravity;
+            bird.canvasY += bird.velocity;
+        },
+        draw(){
+            context.drawImage(
+                sprites, //imagem
+                bird.spriteX, bird.spriteY, //a partir de qual pedaco da imagem devemos pegar a imagem (tipo a margem), em px
+                bird.widthBird, bird.heightBird, //tamanho do recorte na sprite: width e height
+                bird.canvasX, bird.canvasY, //qual parte do canvas eu quero que inicie a imagem
+                bird.widthBird, bird.heightBird//dentro do canvas, qual q eh o tamanho que eu quero q a imagem tenha
+            );
+        }
     }
+    return bird;
 }
 
-
+const globals = {}
 let activeScreen = {}
 function changeToNewScreen(newScreen){
     activeScreen = newScreen
+
+    if(activeScreen.initialize){ //every time it goes back to the main screen, reset the bird
+        activeScreen.initialize();
+    }
 }
 const screens = {
     START: {
+        initialize(){
+            globals.bird = createBird();
+        },
         draw(){
             background.draw()
             floor.draw()
-            bird.draw()
+            globals.bird.draw()
             msgGetReady.draw();
         },
         click(){
@@ -137,17 +152,38 @@ const screens = {
             //tem que colocar nessa ordem pra que quem ta na frente de tudo (o flapbird) sempre apareca
             background.draw()
             floor.draw()
-            bird.draw()            
+            globals.bird.draw()            
         },
         click(){
-            bird.jump();
+            globals.bird.jump();
         },
         update(){
-            bird.update()
+            globals.bird.update()
+        }
+    },
+
+    END: {
+        draw(){
+            //tem que colocar nessa ordem pra que quem ta na frente de tudo (o flapbird) sempre apareca
+            background.draw()
+            floor.draw()
+            msgGetReady.draw()            
+        },
+        click(){
+            changeToNewScreen(screens.START)
+        },
+        update(){
+            
         }
     }
 }
 
+function collision(bird, floor){
+    if(bird.canvasY + bird.heightBird >= floor.canvasY){
+        return true;
+    }
+    return false;
+}
 
 function loop(){
     activeScreen.draw();
