@@ -3,9 +3,13 @@ console.log('Flappy Bird');
 const sprites = new Image();
 sprites.src = './sprites.png';
 
+const hitSound = new Audio();
+hitSound.src = './effects/hit.wav';
+
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');
 
+let frames = 0;
 
 // [msgGetReady]
 const msgGetReady = {
@@ -54,34 +58,43 @@ const background = {
         background.width, background.height,
       );
     },
-  };
-  
-  // [floor]
-  const floor = {
-    spriteX: 0,
-    spriteY: 610,
-    width: 224,
-    height: 112,
-    canvasX: 0,
-    canvasY: canvas.height - 112,
-    draw() {
-      context.drawImage(
-        sprites,
-        floor.spriteX, floor.spriteY,
-        floor.width, floor.height,
-        floor.canvasX, floor.canvasY,
-        floor.width, floor.height,
-      );
-  
-      context.drawImage(
-        sprites,
-        floor.spriteX, floor.spriteY,
-        floor.width, floor.height,
-        (floor.canvasX + floor.width), floor.canvasY, //pra cobrir todo o canvas
-        floor.width, floor.height,
-      );
-    },
 };
+  
+// [floor]
+function createFloor(){
+    const floor = {
+        spriteX: 0,
+        spriteY: 610,
+        width: 224,
+        height: 112,
+        canvasX: 0,
+        canvasY: canvas.height - 112,
+        draw() {
+            context.drawImage(
+                sprites,
+                floor.spriteX, floor.spriteY,
+                floor.width, floor.height,
+                floor.canvasX, floor.canvasY,
+                floor.width, floor.height,
+            );
+        
+            context.drawImage(
+                sprites,
+                floor.spriteX, floor.spriteY,
+                floor.width, floor.height,
+                (floor.canvasX + floor.width), floor.canvasY, //pra cobrir todo o canvas
+                floor.width, floor.height,
+            );
+        },
+        update(){
+            const floorMovement = 1; //velocidade
+            const repeatAt = floor.width / 2; //a partir de qual pedaco da imagem eh bom repetir? (no caso metade)
+            const movement = floor.canvasX - floorMovement; //faz andar
+            floor.canvasX = movement % repeatAt; //toda vez que chegar perto do valor do repeatAt, vai voltar a repetir
+        }
+    };
+    return floor;
+}
 
 function createBird(){
     const bird = {
@@ -94,27 +107,54 @@ function createBird(){
         gravity: 0.05,
         velocity: 0, 
         jumpSize: 2.6,
-        jump(){
-            bird.velocity = -bird.jumpSize
+        movements: [
+            {spriteX: 0, spriteY: 0}, //get first image in sprite
+            {spriteX: 0, spriteY: 26}, //get second image in sprite
+            {spriteX: 0, spriteY: 52}, //get third image in sprite
+        ],
+        frameNow: 0,
+        
+        draw(){
+            bird.updateFrame();
+            const { spriteX, spriteY } = bird.movements[bird.frameNow];
+            context.drawImage(
+                sprites, //imagem
+                spriteX, spriteY, //a partir de qual pedaco da imagem devemos pegar a imagem (tipo a margem), em px
+                bird.widthBird, bird.heightBird, //tamanho do recorte na sprite: width e height
+                bird.canvasX, bird.canvasY, //qual parte do canvas eu quero que inicie a imagem
+                bird.widthBird, bird.heightBird//dentro do canvas, qual q eh o tamanho que eu quero q a imagem tenha
+            );
         },
+
         update() {
-            if(collision(bird, floor)){
-                changeToNewScreen(screens.END);
-                //bird.reset(); //ao inves disso, cria uma funcao q faz wrap de toda essa classe e chama ela 
+            if(collision(bird, globals.floor)){
+                hitSound.play();
+                setTimeout(() =>{
+                    changeToNewScreen(screens.END);
+                    //bird.reset(); //ao inves disso, cria uma funcao q faz wrap de toda essa classe e chama ela                 
+                }, 500)
                 return;
             }
             bird.velocity += bird.gravity;
             bird.canvasY += bird.velocity;
         },
-        draw(){
-            context.drawImage(
-                sprites, //imagem
-                bird.spriteX, bird.spriteY, //a partir de qual pedaco da imagem devemos pegar a imagem (tipo a margem), em px
-                bird.widthBird, bird.heightBird, //tamanho do recorte na sprite: width e height
-                bird.canvasX, bird.canvasY, //qual parte do canvas eu quero que inicie a imagem
-                bird.widthBird, bird.heightBird//dentro do canvas, qual q eh o tamanho que eu quero q a imagem tenha
-            );
-        }
+
+        jump(){
+            bird.velocity = -bird.jumpSize
+        },
+
+        updateFrame(){
+            const framesInterval = 15;
+            const frameIntervalHasPassed = frames % framesInterval;
+            if(frameIntervalHasPassed == 0){ //for every 15 frames, the bird will flapp it's wings
+                const startI = 1;
+                const i = startI + bird.frameNow; 
+                const repetition = bird.movements.length; //faz andar
+                bird.frameNow = i % repetition;
+            }
+        },
+
+        
     }
     return bird;
 }
@@ -132,10 +172,11 @@ const screens = {
     START: {
         initialize(){
             globals.bird = createBird();
+            globals.floor = createFloor();
         },
         draw(){
             background.draw()
-            floor.draw()
+            globals.floor.draw()
             globals.bird.draw()
             msgGetReady.draw();
         },
@@ -143,7 +184,7 @@ const screens = {
             changeToNewScreen(screens.GAME) //vai executar diretamente o draw e o update pq a funcao loop ta rodando
         },
         update(){
-
+            globals.floor.update();
         }
     },
 
@@ -151,7 +192,7 @@ const screens = {
         draw(){
             //tem que colocar nessa ordem pra que quem ta na frente de tudo (o flapbird) sempre apareca
             background.draw()
-            floor.draw()
+            globals.floor.draw()
             globals.bird.draw()            
         },
         click(){
@@ -159,6 +200,7 @@ const screens = {
         },
         update(){
             globals.bird.update()
+            globals.floor.update();
         }
     },
 
@@ -166,7 +208,7 @@ const screens = {
         draw(){
             //tem que colocar nessa ordem pra que quem ta na frente de tudo (o flapbird) sempre apareca
             background.draw()
-            floor.draw()
+            globals.floor.draw()
             msgGetReady.draw()            
         },
         click(){
@@ -188,6 +230,7 @@ function collision(bird, floor){
 function loop(){
     activeScreen.draw();
     activeScreen.update();
+    frames += 1;
     requestAnimationFrame(loop); //vai colocar os quadros da imagem (fps) pra rodarem infinitamente. Nesse caso, a cada quadra, cada segundo, essa mesma funcao vai ser chamada pra ficar printando na tela infinitamente
 }
 
