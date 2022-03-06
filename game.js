@@ -6,6 +6,15 @@ sprites.src = './sprites.png';
 const hitSound = new Audio();
 hitSound.src = './effects/hit.wav';
 
+const scoreSound = new Audio();
+scoreSound.src = './effects/score.wav';
+
+const fallSound = new Audio();
+fallSound.src = './effects/fall.wav';
+
+const jumpSound = new Audio();
+jumpSound.src = './effects/jump.wav';
+
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');
 
@@ -135,12 +144,14 @@ function createBird(){
                 }, 500)
                 return;
             }
+            fallSound.play();
             bird.velocity += bird.gravity;
             bird.canvasY += bird.velocity;
         },
 
         jump(){
-            bird.velocity = -bird.jumpSize
+            bird.velocity = -bird.jumpSize;
+            jumpSound.play();
         },
 
         updateFrame(){
