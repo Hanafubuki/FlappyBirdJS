@@ -6,6 +6,26 @@ sprites.src = './sprites.png';
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');
 
+
+// [msgGetReady]
+const msgGetReady = {
+    spriteX: 134,
+    spriteY: 0,
+    width: 174,
+    height: 152,
+    canvasX: (canvas.width / 2) - 174 / 2,
+    canvasY: 50,
+    draw() {
+      context.drawImage(
+        sprites,
+        msgGetReady.spriteX, msgGetReady.spriteY,
+        msgGetReady.width, msgGetReady.height,
+        msgGetReady.canvasX, msgGetReady.canvasY,
+        msgGetReady.width, msgGetReady.height
+      );
+    }
+}
+
 // [Plano de Fundo]
 const background = {
     spriteX: 390,
@@ -88,13 +108,50 @@ const bird = {
 }
 
 
+let activeScreen = {}
+function changeToNewScreen(newScreen){
+    activeScreen = newScreen
+}
+const screens = {
+    START: {
+        draw(){
+            background.draw()
+            floor.draw()
+            bird.draw()
+            msgGetReady.draw();
+        },
+        click(){
+            changeToNewScreen(screens.GAME) //vai executar diretamente o draw e o update pq a funcao loop ta rodando
+        },
+        update(){
+
+        }
+    },
+
+    GAME: {
+        draw(){
+            //tem que colocar nessa ordem pra que quem ta na frente de tudo (o flapbird) sempre apareca
+            background.draw()
+            floor.draw()
+            bird.draw()            
+        },
+        update(){
+            bird.update()
+        }
+    }
+}
+
+
 function loop(){
-    //tem que colocar nessa ordem pra que quem ta na frente de tudo (o flapbird) sempre apareca
-    background.draw()
-    floor.draw()
-    bird.draw()
-    bird.update();
+    activeScreen.draw();
+    activeScreen.update();
     requestAnimationFrame(loop); //vai colocar os quadros da imagem (fps) pra rodarem infinitamente. Nesse caso, a cada quadra, cada segundo, essa mesma funcao vai ser chamada pra ficar printando na tela infinitamente
 }
 
+window.addEventListener('click', function(){
+    if(activeScreen.click){
+        activeScreen.click()
+    }
+})
+changeToNewScreen(screens.START)
 loop();
